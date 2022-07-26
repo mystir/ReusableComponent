@@ -10,7 +10,29 @@
 </head>
 
 <body>
-    <reusable-comment-component id="reusable-comment-component"></reusable-comment-component>
+    <template id="my-template">
+        <style>
+            h2 {
+                font-family: Verdana, Geneva, Tahoma, sans-serif;
+                display: inline;
+            }
+        </style>
+
+        <div class="wrapper">
+            <h2 id="name"></h2>
+            <h2>,</h2>
+            <h2 id="email"></h2>
+            <h2>,</h2>
+            <h2 id="comment"></h2>
+        </div>
+    </template>
+
+    <reusable-comment-component name="Jahrel" email="jahrel@gmail.com" comment="hello, world!">
+    </reusable-comment-component><br>
+    <reusable-comment-component name="Matthew" email="matthew@gmail.com" comment="nice dog">
+    </reusable-comment-component><br>
+    <reusable-comment-component name="John" email="john@gmail.com" comment="best bread!"></reusable-comment-component>
+
     <script src="index.js"></script>
 </body>
 
