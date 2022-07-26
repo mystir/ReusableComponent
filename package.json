@@ -1,0 +1,21 @@
+{
+  "name": "reusable-comment-component",
+  "version": "1.0.0",
+  "description": "Reusable Comment Component",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "vite",
+    "prettier": "prettier --write **/*.{ts,js,css,html}"
+  },
+  "author": "Jahrel Stewart",
+  "license": "ISC",
+  "dependencies": {
+    "prettier": "^2.7.1",
+    "vite": "^3.0.3"
+  },
+  "devDependencies": {
+    "eslint": "^8.20.0",
+    "eslint-config-google": "^0.14.0"
+  }
+}
