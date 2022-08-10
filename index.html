@@ -15,7 +15,7 @@
 </head>
 
 <body>
-    <template id="my-template">
+    <template id="template-reusable-comment-component">
         <style>
             h2 {
                 font-family: Verdana, Geneva, Tahoma, sans-serif;
@@ -23,7 +23,7 @@
             }
         </style>
 
-        <div class="row justify-content-center">
+        <div id="entireComment" class="row justify-content-center">
             <div class="card" style="width: 50%;">
                 <div class="card-header" id="time"></div>
                 <div class="card-body">
@@ -40,12 +40,16 @@
 
     </template>
 
+    <template id="template-comment-system">
+        <div id="allComments" class="container-fluid d-grid gap-3"></div>
+    </template>
+
     <div class="container-fluid d-grid gap-3">
         <br>
         <br>
         <br>
         <div class="row justify-content-center">
-            <form id="form" style="width: 50%;" onsubmit="return validateForm(this);" validate>
+            <form id="form" style="width: 50%;" onsubmit="return commentStore.addNewComment(this);" validate>
                 <div class="mb-3">
                     <label for="formName" class="form-label">Name</label>
                     <input type="text" class="form-control" id="formName" name="formName" placeholder="John Doe"
@@ -67,6 +71,7 @@
             </form>
         </div>
         <br>
+        <comment-system></comment-system>
     </div>
 
     <br>
