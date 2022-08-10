@@ -1,5 +1,5 @@
-/* eslint-disable max-len */
 /* eslint-disable linebreak-style */
+/* eslint-disable max-len */
 /* eslint-disable eol-last */
 /* eslint-disable require-jsdoc */
 /* eslint-disable no-unused-vars */
@@ -94,10 +94,9 @@ class CommentSystem extends HTMLElement {
 
   // Change counter when number attribute changes
   attributeChangedCallback(property, oldValue, newValue) {
-    newValue = JSON.parse(newValue);
-
-    if (oldValue === newValue || newValue.name === '') return;
+    if (oldValue === newValue || JSON.parse(newValue).name === '') return;
     if (property === 'comments' && this.comments) {
+      newValue = JSON.parse(newValue);
       const newCommentComponent = document.createElement('reusable-comment-component');
       newCommentComponent.setAttribute('name', newValue.name);
       newCommentComponent.setAttribute('email', newValue.email);
