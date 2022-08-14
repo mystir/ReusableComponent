@@ -4,10 +4,33 @@
 /* eslint-disable require-jsdoc */
 /* eslint-disable no-unused-vars */
 
+import {openDB} from 'idb';
+
 class CommentStore {
   constructor(init={}) {
+    if (!('indexedDB' in window)) {
+      console.log('This browser doesn\'t support IndexedDB');
+      return;
+    }
+
+    this.database = this.connectDB();
+
     const self = this;
     this.subscribers = [];
+
+    this.database.then(async (db) => {
+      // Make the database reusable from within the store
+      this.db = db;
+
+      const tx = db.transaction(['comments'], 'readwrite');
+      const store = tx.objectStore('comments');
+
+      return store.count();
+    }).then((count) => {
+      if (count > 0) {
+        this.set('recordcount', count);
+      }
+    });
 
     this.state = new Proxy(init, {
       set(state, key, value) {
@@ -42,24 +65,77 @@ class CommentStore {
     return this.state[key];
   }
 
-  addNewComment(form) {
-    this.set('comments', JSON.stringify({
-      name: form.formName.value,
-      email: form.formEmail.value,
-      comment: form.formComment.value,
-    }));
+  connectDB() {
+    return openDB('CommentsDB', 1, {upgrade(db) {
+      if (!db.objectStoreNames.contains('comments')) {
+        console.log('Making Comments Table...');
 
-    return false;
+        const commentsTable = db.createObjectStore('comments', {keyPath: 'id', autoIncrement: true});
+        commentsTable.createIndex('name', 'name', {unique: false});
+        commentsTable.createIndex('email', 'email', {unique: false});
+        commentsTable.createIndex('comment', 'comment', {unique: false});
+        commentsTable.createIndex('time', 'time', {unique: false});
+      }
+    }});
+  }
+
+  addNewComment(form) {
+    this.database.then(function(db) {
+      const tx = db.transaction(['comments'], 'readwrite');
+      const store = tx.objectStore('comments');
+      const item = {
+        name: form.formName.value,
+        email: form.formEmail.value,
+        comment: form.formComment.value,
+        time: new Date(),
+      };
+
+      store.add(item);
+
+      return store.count();
+    }).then((count) => {
+      console.log('Comment Added Successfully');
+      this.set('recordcount', Math.max(0, count));
+    });
+  }
+
+  deleteComment(id) {
+    this.database.then((db) => {
+      const tx = db.transaction(['comments'], 'readwrite');
+      const store = tx.objectStore('comments');
+      store.delete(id);
+
+      return store.count();
+    }).then((count) => {
+      console.log('Comment deleted.');
+      this.set('recordcount', Math.max(0, count));
+    });
+  }
+
+  filterChangedTo(text) {
+    this.set('filter', text);
   }
 }
 
 // --------------------------------------------------------------------
 
-const commentStore = new CommentStore({'comments': JSON.stringify({
-  name: '',
-  email: '',
-  comment: '',
-})});
+const commentStore = new CommentStore({recordcount: 0, filter: ''});
+
+
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('form');
+  const filter = document.getElementById('filterBy');
+
+  form.addEventListener('submit', (e)=>{
+    e.preventDefault();
+    commentStore.addNewComment(form);
+  });
+
+  filter.addEventListener('input', (e) => {
+    commentStore.filterChangedTo(e.target.value);
+  });
+});
+
 
 // --------------------------------------------------------------------
 
@@ -83,29 +159,84 @@ class CommentSystem extends HTMLElement {
 
   // Observe comment attribute for changes
   static get observedAttributes() {
-    return ['comments'];
+    return ['recordcount', 'filter'];
   }
 
   connectedCallback() {
     commentStore.subscribe((state) => {
-      this.setAttribute('comments', state.comments);
+      this.setAttribute('recordcount', state.recordcount);
+      this.setAttribute('filter', state.filter);
     });
   }
 
-  // Change counter when number attribute changes
+  // Change record count when attribute changes
   attributeChangedCallback(property, oldValue, newValue) {
-    if (oldValue === newValue || JSON.parse(newValue).name === '') return;
-    if (property === 'comments' && this.comments) {
-      newValue = JSON.parse(newValue);
-      const newCommentComponent = document.createElement('reusable-comment-component');
-      newCommentComponent.setAttribute('name', newValue.name);
-      newCommentComponent.setAttribute('email', newValue.email);
-      newCommentComponent.setAttribute('comment', newValue.comment);
-      const today = new Date();
-      newCommentComponent.setAttribute('time', today);
+    if (oldValue === newValue) return;
+    if (this.comments) {
+      if (property === 'recordcount' || newValue == '') {
+        // console.log('Total Records:', newValue);
+        commentStore.database.then(function(db) {
+          const tx = db.transaction(['comments'], 'readonly');
+          const store = tx.objectStore('comments');
 
-      this.comments.prepend(newCommentComponent);
+          return store.getAll();
+        }).then((allRecords)=> {
+          this.comments.textContent = '';
+
+          allRecords.forEach((elm) => {
+            this.listComment(elm);
+          });
+        });
+      }
+
+      if (property === 'filter' && newValue != '') {
+        const options = document.getElementById('filterOptions');
+
+        commentStore.database.then(function(db) {
+          const tx = db.transaction(['comments'], 'readonly');
+          const store = tx.objectStore('comments');
+
+          return store.getAll();
+        }).then((allRecords)=> {
+          this.comments.textContent = '';
+
+          allRecords.forEach((elm) => {
+            if (options.value != 'Comment Length') {
+              let filterChoice;
+              switch (options.value) {
+                case 'Author Name':
+                  filterChoice = elm.name;
+                  break;
+                case 'Email Address':
+                  filterChoice = elm.email;
+                  break;
+                default:
+                  break;
+              }
+
+              if (filterChoice.toLowerCase().includes(newValue.toLowerCase())) {
+                this.listComment(elm);
+              }
+            } else {
+              if (elm.comment.length <= Number(newValue)) {
+                this.listComment(elm);
+              }
+            }
+          });
+        });
+      }
     }
+  }
+
+  listComment(elm) {
+    const newCommentComponent = document.createElement('reusable-comment-component');
+    newCommentComponent.setAttribute('id', elm.id);
+    newCommentComponent.setAttribute('name', elm.name);
+    newCommentComponent.setAttribute('email', elm.email);
+    newCommentComponent.setAttribute('comment', elm.comment);
+    newCommentComponent.setAttribute('time', elm.time);
+
+    this.comments.prepend(newCommentComponent);
   }
 }
 
@@ -139,11 +270,23 @@ class ReusableCommentComponent extends HTMLElement {
 
     const time = this.shadowRoot.getElementById('time');
     time.textContent = this.getAttribute('time');
+
+    const closeBtn = this.shadowRoot.getElementById('closeBtn');
+
+    closeBtn.addEventListener('click', () => {
+      commentStore.deleteComment(Number(this.getAttribute('id')));
+    });
   }
 }
 
 // --------------------------------------------------------------------
 
 
-customElements.define('reusable-comment-component', ReusableCommentComponent);
-customElements.define('comment-system', CommentSystem);
+if (customElements.get('reusable-comment-component') === undefined) {
+  customElements.define('reusable-comment-component', ReusableCommentComponent);
+}
+
+if (customElements.get('comment-system') === undefined) {
+  customElements.define('comment-system', CommentSystem);
+}
+
