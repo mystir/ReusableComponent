@@ -3,8 +3,41 @@
 /* eslint-disable eol-last */
 /* eslint-disable require-jsdoc */
 /* eslint-disable no-unused-vars */
+/* eslint-disable new-cap */
 
 import {openDB} from 'idb';
+import {registerSW} from 'virtual:pwa-register';
+import Toastify from 'toastify-js';
+import 'toastify-js/src/toastify.css';
+
+const updateSW = registerSW({
+  onNeedRefresh() {
+    Toastify({
+      text: `<h4 style='display: inline'>An update is available!</h4>
+             <br><br>
+             <a class='do-sw-update' style='color: white; text-decoration: none'>Click to update and reload</a>`,
+      escapeMarkup: false,
+      gravity: 'bottom',
+      onClick() {
+        updateSW(true);
+      },
+    }).showToast();
+
+    console.log('Need Refresh');
+  },
+  onOfflineReady() {
+    console.log('Offline Ready');
+  },
+  onRegistered() {
+    console.log('Registered');
+  },
+  onRegisterError(e) {
+    console.log('Register Error');
+    console.error(e);
+  },
+
+});
+
 
 class CommentStore {
   constructor(init={}) {
