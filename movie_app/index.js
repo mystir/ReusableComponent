@@ -4,7 +4,7 @@
 /* eslint-disable require-jsdoc */
 /* eslint-disable no-unused-vars */
 
-import {openDB} from 'idb';
+import {openDB} from '../node_modules/idb';
 import {api} from './movie-api';
 
 class MovieStore {
