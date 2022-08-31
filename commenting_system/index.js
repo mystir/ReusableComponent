@@ -5,9 +5,9 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable new-cap */
 
-import {openDB} from '../node_modules/idb';
+import {openDB} from 'idb';
 import {registerSW} from 'virtual:pwa-register';
-import Toastify from '../node_modules/toastify-js';
+import Toastify from 'toastify-js';
 import 'toastify-js/src/toastify.css';
 
 const updateSW = registerSW({
