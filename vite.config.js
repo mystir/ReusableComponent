@@ -5,10 +5,20 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable new-cap */
 
+import {resolve} from 'path';
 import {defineConfig} from 'vite';
 import {VitePWA} from 'vite-plugin-pwa';
 
 export default defineConfig({
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        movie_app: resolve(__dirname, 'movie_app/index.html'),
+        commenting_system: resolve(__dirname, 'commenting_system/index.html'),
+      },
+    },
+  },
   plugins: [
     VitePWA(
         {
@@ -21,7 +31,7 @@ export default defineConfig({
             globPatterns: ['**/*.html'],
           },
           manifest: {
-            name: 'PWA Comment System App',
+            name: 'PWA App',
             short_name: 'PWA',
             background_color: '#c0ffee',
             theme_color: '#c0ffee',
